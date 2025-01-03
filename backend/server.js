@@ -10,7 +10,7 @@ const server = http.createServer(app);
 
 // Configure CORS middleware first
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3020",
+  origin: '*',  // Allow all origins in development
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -18,7 +18,7 @@ app.use(cors({
 // Configure Socket.IO with CORS
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3020",
+    origin: '*',  // Allow all origins in development
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -27,7 +27,7 @@ const io = new Server(server, {
 app.use(express.json());
 
 // Staff password (in a real app, use environment variables and proper hashing)
-const STAFF_PASSWORD = "5117";
+const STAFF_PASSWORD = "bar123";
 
 // Database setup
 let db;
@@ -109,6 +109,26 @@ app.put('/api/orders/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating order:', error);
     res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+app.delete('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.run('DELETE FROM orders WHERE id = ?', [id]);
+    
+    // Get updated orders and notify clients
+    const orders = await db.all('SELECT * FROM orders ORDER BY timestamp DESC');
+    const parsedOrders = orders.map(order => ({
+      ...order,
+      items: JSON.parse(order.items)
+    }));
+    
+    io.emit('orders-update', parsedOrders);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ error: 'Failed to delete order' });
   }
 });
 

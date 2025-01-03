@@ -1,0 +1,14 @@
+{
+  "name": "bar-orders",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
+    "install-all": "concurrently \"cd backend && npm install\" \"cd frontend && npm install\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
