@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const menuItems = [
-  { id: 1, name: 'Mojito', description: 'Rum, lime, mint, sugar, club soda' },
-  { id: 2, name: 'Tommys Margarita', description: 'Tequila, agave syrup, lime juice' },
-  { id: 3, name: 'Hugo Spritz', description: 'Prosecco, elderflower cordial, club soda' },
-  { id: 4, name: 'Vodka Martini', description: 'Vodka, dry vermouth' },
-  { id: 4, name: 'Espresso Martini', description: 'Vodka, espresso' }
+const menuCategories = [
+  {
+    id: 1,
+    name: 'Cocktails',
+    items: [
+      { id: 1, name: 'Mojito', description: 'Rum, lime, mint, sugar, club soda' },
+      { id: 2, name: 'Tommys Margarita', description: 'Tequila, agave syrup, lime juice' },
+      { id: 3, name: 'Hugo Spritz', description: 'Prosecco, elderflower cordial, club soda' },
+      { id: 4, name: 'Vodka Martini', description: 'Vodka, dry vermouth' },
+      { id: 5, name: 'Espresso Martini', description: 'Vodka, espresso' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Wines',
+    items: [
+      { id: 6, name: 'Lambrini', description: 'The best drink ever?' },
+      { id: 7, name: 'Red', description: 'House red' },
+      { id: 8, name: 'White', description: 'House white' },
+      { id: 9, name: 'Prosecco', description: 'House prosecco' }
+    ]
+  }
 ];
 
 const OrderStatus = {
@@ -38,6 +54,7 @@ const OrderConfirmation = ({ isOpen, onClose }) => {
 const CustomerView = ({ onOrderPlaced }) => {
   const [cart, setCart] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState([1]); // Start with Cocktails expanded
   
   const addToCart = (item) => {
     const existingItemIndex = cart.findIndex(cartItem => 
@@ -90,19 +107,41 @@ const CustomerView = ({ onOrderPlaced }) => {
       <div className="menu-card">
         <h2>Drink Menu</h2>
         <p>Select your drinks</p>
-        <div className="menu-items">
-          {menuItems.map((item) => (
-            <div key={item.id} className="menu-item">
-              <div>
-                <h3>{item.name}</h3>
-                <p>{item.description}</p>
-              </div>
+        <div className="menu-categories">
+          {menuCategories.map((category) => (
+            <div key={category.id} className="menu-category">
               <button 
-                className="add-button"
-                onClick={() => addToCart(item)}
+                className="category-header"
+                onClick={() => setExpandedCategories(prev => 
+                  prev.includes(category.id) 
+                    ? prev.filter(id => id !== category.id)
+                    : [...prev, category.id]
+                )}
               >
-                Add
+                <h3>{category.name}</h3>
+                <span className={`arrow ${expandedCategories.includes(category.id) ? 'expanded' : ''}`}>
+                  ▼
+                </span>
               </button>
+              
+              {expandedCategories.includes(category.id) && (
+                <div className="menu-items">
+                  {category.items.map((item) => (
+                    <div key={item.id} className="menu-item">
+                      <div>
+                        <h3>{item.name}</h3>
+                        <p>{item.description}</p>
+                      </div>
+                      <button 
+                        className="add-button"
+                        onClick={() => addToCart(item)}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
