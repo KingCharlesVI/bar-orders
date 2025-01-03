@@ -4,8 +4,9 @@ import './App.css';
 const menuItems = [
   { id: 1, name: 'Mojito', description: 'Rum, lime, mint, sugar, club soda' },
   { id: 2, name: 'Tommys Margarita', description: 'Tequila, agave syrup, lime juice' },
-  { id: 3, name: 'Hugo Spritz', description: 'Prosecco, elderflower liqueur, club soda' },
-  { id: 4, name: 'Vodka Martini', description: 'Vodka, dry vermouth' }
+  { id: 3, name: 'Hugo Spritz', description: 'Prosecco, elderflower cordial, club soda' },
+  { id: 4, name: 'Vodka Martini', description: 'Vodka, dry vermouth' },
+  { id: 4, name: 'Espresso Martini', description: 'Vodka, espresso' }
 ];
 
 const OrderStatus = {
@@ -15,8 +16,28 @@ const OrderStatus = {
   DELIVERED: 'delivered'
 };
 
+const OrderConfirmation = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full m-4">
+        <h3 className="text-xl font-semibold mb-4">Order Placed Successfully!</h3>
+        <p className="text-gray-600 mb-6">Your drinks are being prepared.</p>
+        <button 
+          onClick={onClose}
+          className="place-order-button"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CustomerView = ({ onOrderPlaced }) => {
   const [cart, setCart] = useState([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   const addToCart = (item) => {
     const existingItemIndex = cart.findIndex(cartItem => 
@@ -40,7 +61,6 @@ const CustomerView = ({ onOrderPlaced }) => {
     const newQuantity = (newCart[index].quantity || 1) + change;
     
     if (newQuantity < 1) {
-      // Remove item if quantity would be less than 1
       newCart.splice(index, 1);
     } else {
       newCart[index] = {
@@ -62,6 +82,7 @@ const CustomerView = ({ onOrderPlaced }) => {
     
     onOrderPlaced(order);
     setCart([]);
+    setShowConfirmation(true);
   };
 
   return (
@@ -122,6 +143,10 @@ const CustomerView = ({ onOrderPlaced }) => {
           </div>
         </div>
       )}
+      <OrderConfirmation 
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+      />
     </div>
   );
 };
@@ -133,7 +158,7 @@ const StaffAuth = ({ onAuth }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3021/api/verify-staff', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/verify-staff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
@@ -168,7 +193,7 @@ const StaffAuth = ({ onAuth }) => {
   );
 };
 
-const StaffView = ({ orders, onUpdateOrder }) => {
+const StaffView = ({ orders, onUpdateOrder, onDeleteOrder }) => {
   const getStatusClass = (status) => {
     const statusClasses = {
       [OrderStatus.PENDING]: 'status-pending',
@@ -201,9 +226,17 @@ const StaffView = ({ orders, onUpdateOrder }) => {
                   {new Date(order.timestamp).toLocaleString()}
                 </p>
               </div>
-              <span className={`status-badge ${getStatusClass(order.status)}`}>
-                {order.status.replace('_', ' ').toUpperCase()}
-              </span>
+              <div className="order-controls">
+                <span className={`status-badge ${getStatusClass(order.status)}`}>
+                  {order.status.replace('_', ' ').toUpperCase()}
+                </span>
+                <button 
+                  className="delete-button"
+                  onClick={() => onDeleteOrder(order.id)}
+                >
+                  ×
+                </button>
+              </div>
             </div>
             
             <div className="order-items">
@@ -237,8 +270,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Load initial orders
-    fetch('http://localhost:3021/api/orders')
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders`)
       .then(res => res.json())
       .then(data => setOrders(data))
       .catch(err => console.error('Failed to load orders:', err));
@@ -246,7 +278,7 @@ const App = () => {
 
   const handleOrderPlaced = async (order) => {
     try {
-      const response = await fetch('http://localhost:3021/api/orders', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order)
@@ -258,16 +290,43 @@ const App = () => {
       setOrders([newOrder, ...orders]);
     } catch (error) {
       console.error('Error placing order:', error);
-      // You might want to show an error message to the user here
     }
   };
 
-  const handleUpdateOrder = (orderId, newStatus) => {
-    fetch(`http://localhost:3021/api/orders/${orderId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
+  const handleUpdateOrder = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update order');
+      }
+      const updatedOrders = orders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      );
+      setOrders(updatedOrders);
+    } catch (error) {
+      console.error('Error updating order:', error);
+    }
+  };
+
+  const handleDelete = async (orderId) => {
+    if (window.confirm('Are you sure you want to delete this order?')) {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders/${orderId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete order');
+        }
+        const updatedOrders = orders.filter(order => order.id !== orderId);
+        setOrders(updatedOrders);
+      } catch (error) {
+        console.error('Error deleting order:', error);
+      }
+    }
   };
 
   return (
@@ -283,7 +342,8 @@ const App = () => {
         isAuthenticated ? (
           <StaffView 
             orders={orders} 
-            onUpdateOrder={handleUpdateOrder} 
+            onUpdateOrder={handleUpdateOrder}
+            onDeleteOrder={handleDelete}
           />
         ) : (
           <StaffAuth onAuth={setIsAuthenticated} />
