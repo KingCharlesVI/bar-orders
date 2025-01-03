@@ -54,7 +54,7 @@ const OrderConfirmation = ({ isOpen, onClose }) => {
 const CustomerView = ({ onOrderPlaced }) => {
   const [cart, setCart] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState([1]); // Start with Cocktails expanded
+  const [expandedCategories, setExpandedCategories] = useState([1]);
   
   const addToCart = (item) => {
     const existingItemIndex = cart.findIndex(cartItem => 
@@ -309,10 +309,27 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders`)
-      .then(res => res.json())
-      .then(data => setOrders(data))
-      .catch(err => console.error('Failed to load orders:', err));
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        const data = await response.json();
+        setOrders(data);
+      } catch (err) {
+        console.error('Failed to load orders:', err);
+      }
+    };
+
+    // Initial fetch
+    fetchOrders();
+
+    // Set up polling interval
+    const intervalId = setInterval(fetchOrders, 2000); // 10 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleOrderPlaced = async (order) => {
