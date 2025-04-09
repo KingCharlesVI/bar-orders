@@ -6,9 +6,9 @@ const menuCategories = [
     id: 1,
     name: 'Cocktails',
     items: [
-      { id: 1, name: '**OUT OF STOCK**Mojito', description: 'Rum, lime, mint, sugar, club soda' },
+      { id: 1, name: 'Mojito', description: 'Rum, lime, mint, sugar, club soda' },
       { id: 2, name: 'Tommys Margarita', description: 'Tequila, agave syrup, lime juice' },
-      { id: 3, name: 'Radi Spritz', description: 'Prosecco, elderflower and pomegranate cordial, club soda' },
+      { id: 3, name: 'Hugo Spritz', description: 'Prosecco, elderflower liqueur, club soda' },
       { id: 4, name: 'Vodka Martini', description: 'Vodka, dry vermouth' },
       { id: 5, name: 'Espresso Martini', description: 'Vodka, espresso' }
     ]
@@ -18,9 +18,7 @@ const menuCategories = [
     name: 'Wines',
     items: [
       { id: 6, name: 'Lambrini', description: 'The best drink ever?' },
-      { id: 7, name: 'Red', description: 'House red' },
-      { id: 8, name: 'White', description: 'House white' },
-      { id: 9, name: 'Prosecco', description: 'House prosecco' }
+      { id: 7, name: 'Prosecco', description: 'House prosecco' }
     ]
   }
 ];
@@ -107,7 +105,7 @@ const CustomerView = ({ onOrderPlaced }) => {
       <div className="menu-card">
         <h2>Drink Menu</h2>
         <p>Select your drinks</p>
-        <p className='warning-message'>**ICE IS GOOD TO GO**</p>
+        <p className='warning-message'></p>
         <div className="menu-categories">
           {menuCategories.map((category) => (
             <div key={category.id} className="menu-category">
